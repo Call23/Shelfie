@@ -8,9 +8,9 @@ import {
   Text,
   TouchableWithoutFeedback,
 } from "react-native";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useState } from "react";
-
+import { useBooks } from "../../hooks/useBooks";
 import ThemedButton from "../../components/ThemedButton";
 import ThemedTextInput from "../../components/ThemedTextInput";
 
@@ -44,9 +44,10 @@ const Create = () => {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <ThemedView style={styles.container}>
         <Spacer />
-        <ThemedText style={styles.title} title={true}>
+        <ThemedText style={styles.heading} title={true}>
           Add a New Book.
         </ThemedText>
+        <Spacer />
 
         <ThemedTextInput
           placeholder="Book title"
@@ -54,6 +55,7 @@ const Create = () => {
           onChangeText={setTitle}
           value={title}
         />
+        <Spacer />
 
         <ThemedTextInput
           placeholder="Author"
@@ -61,6 +63,7 @@ const Create = () => {
           onChangeText={setAuthor}
           value={author}
         />
+        <Spacer />
 
         <ThemedTextInput
           placeholder="Book description"
@@ -75,15 +78,6 @@ const Create = () => {
             {loading ? "Saving..." : "Create Book"}
           </Text>
         </ThemedButton>
-        <Spacer height={10} />
-        {error && <Text style={styles.error}>{error}</Text>}
-
-        <Spacer height={100} />
-        <Link href="/Register">
-          <ThemedText style={{ textAlign: "center" }}>
-            Click here to register
-          </ThemedText>
-        </Link>
       </ThemedView>
     </TouchableWithoutFeedback>
   );

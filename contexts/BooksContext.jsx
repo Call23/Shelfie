@@ -1,6 +1,6 @@
-import { useState, createContext } from "react";
-import { databases } from "../lib/appwrite";
-import { ID, Permission, Role } from "react-native-appwrite";
+import { useState, createContext, useEffect } from "react";
+import { databases, client } from "../lib/appwrite";
+import { ID, Permission, Query, Role } from "react-native-appwrite";
 
 import { useUser } from "../hooks/useUsers";
 
@@ -15,12 +15,18 @@ export const BooksProvider = ({ children }) => {
   const { user } = useUser();
   async function fetchBooks() {
     try {
+      const response = await databases.listDocuments(DATABASE_ID, TABLE_ID, [
+        Query.equal("userId", user.$id),
+      ]);
+      setBooks(response.documents);
     } catch (error) {
       throw Error(error.message);
     }
   }
   async function fetchBookById(id) {
     try {
+      const response = await databases.getDocument(DATABASE_ID, TABLE_ID, id);
+      return response;
     } catch (error) {
       throw Error(error.message);
     }
@@ -36,7 +42,7 @@ export const BooksProvider = ({ children }) => {
           Permission.read(Role.user(user.$id)),
           Permission.update(Role.user(user.$id)),
           Permission.delete(Role.user(user.$id)),
-        ]
+        ],
       );
     } catch (error) {
       throw Error(error.message);
@@ -44,10 +50,38 @@ export const BooksProvider = ({ children }) => {
   }
   async function deleteBook(id) {
     try {
+      await databases.deleteDocument(DATABASE_ID, TABLE_ID, id);
     } catch (error) {
       throw Error(error.message);
     }
   }
+
+  useEffect(() => {
+    let unsubscribe;
+    const channel = `databases.${DATABASE_ID}.collections.${TABLE_ID}.documents`;
+    if (user) {
+      fetchBooks();
+      unsubscribe = client.subscribe(channel, (response) => {
+        const { payload, events } = response;
+
+        if (events[0].includes("create")) {
+          setBooks((prevBooks) => [...prevBooks, payload]);
+        }
+        if (events[0].includes("delete")) {
+          setBooks((prevBooks) =>
+            prevBooks.filter((book) => book.$id !== payload.$id),
+          );
+        }
+      });
+    } else {
+      setBooks([]);
+    }
+
+    // clean up function
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [user]);
 
   return (
     <BooksContext.Provider
